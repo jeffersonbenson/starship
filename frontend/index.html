@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Project Starship</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+
+    <style>
+    [x-cloak] { display: none !important; }
+    </style>
+
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+    <script>
+    // Solana code goes here
+    const endpoint = solanaWeb3.clusterApiUrl('devnet')
+    async function connectWallet(){
+      try {
+          const resp = await window.solana.connect();
+          pubKey = resp.publicKey.toString();
+          this.shortpubKey = pubKey.substring(0,7) + '...'
+          const lowerpubKey = pubKey.toLowerCase();
+          console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
+          this.pods = await getPods(lowerpubKey);
+          console.log(this.pods);
+      }catch (err) {
+          this.shortpubKey = 'Error!'
+          console.log("Something has gone wrong!")
+          console.log(err)
+      }
+    }
+    async function getPods(lowerpubKey) {
+        let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey)
+        .then(response => response.json())
+        .then(data => pods = data)
+        .catch(err => console.log('Request Failed', err));
+        return pods;
+    }
+    </script>
+
+  </head>
+
+  <body>
+  <noscript>You need to enable JavaScript to use this dapp.</noscript>
+
+
+    <div x-data="{ tab: 'dashboard' }">
+    <nav class="navbar is-dark has-shadow" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <span class="icon is-large">
+          <i class="las la-space-shuttle la-2x"></i>
+        </span>
+        <h1 class="is-size-3">Starship</h1>
+      </div>
+      <div class="navbar-start">
+        <a @click="tab = 'dashboard'" class="navbar-item" href="#">
+          Dashboard
+        </a>
+        <a @click="tab = 'deploy'" class="navbar-item" href="#">
+          Deploy
+        </a>
+        <a @click="tab = 'nodes'" class="navbar-item">
+          Nodes
+        </a>
+        <a class="navbar-item">
+          Status
+        </a>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+
+          <a class="navbar-link">More</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item">
+              Docs
+            </a>
+            <a class="navbar-item">
+              About
+            </a>
+            <a class="navbar-item">
+              Community
+            </a>
+          </div>
+
+        </div>
+      </div>
+      <div class="navbar-end">
+        <a x-data="{ shortpubKey: ''}" x-text="shortpubKey ? shortpubKey : 'Connect'" @click="connectWallet" class="button mr-3 mt-1 is-rounded is-light is-responsive"></a>
+      </div>
+    </nav>
+
+    <div x-show="tab === 'dashboard'" x-cloak>
+    <section class="section">
+      <h1 class="title">Dashboard</h1>
+      <h2 class="subtitle">Track your things in space</h2>
+
+      <div class="container">
+    
+        <div class="columns mt-5 is-8 is-variable" x-data="{ podData: this.pods }">
+
+          <template x-for="pod in podData" :key="pod.id">
+          <div class="column is-4-tablet is-3-desktop">
+            <div class="card">
+              <div class="card-content">
+                <p class="title has-text-primary-dark" x-text="pod.name"></p>
+                <p class="subtitle" x-text="pod.image"></p>
+                <p>
+                  <a href="" target="_blank" rel="noopener noreferrer">mytest</a>
+                </p>
+                <p>
+                  Time Remaining:
+                </p>
+              </div>
+              <footer class="card-footer">
+                <a class="card-footer-item" href="">Logs</a>
+                <a class="card-footer-item" href="">Add Time</a>
+              </footer>
+            </div>
+          </div>
+          </template>
+
+        </div>
+        
+      </div>
+    </section>
+    </div>
+
+    <div x-show="tab === 'deploy'" x-cloak>
+    <section class="section">
+      <h1 class="title">Deploy</h1>
+      <h2 class="subtitle">Launch your thing into space!</h2>
+
+      <div class="container">
+        <div class="columns mt-5 is-variable">
+
+          <div class="column is-half">
+
+            <div class="field">
+              <label class="label">Name</label>
+              <input class="input" type="text" placeholder="my-fancy-container">
+            </div>
+
+            <div class="field">
+              <label class="label">IPFS Link</label>
+              <input class="input" type="text" placeholder="secret-ipfs-link">
+            </div>
+
+            <div class="field">
+              <label class="label">Time in hours</label>
+              <input class="input" type="text" placeholder="99">
+            </div>
+
+            <button class="button is-primary is-rounded">Submit</button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+    </div>
+
+    <div x-show="tab === 'nodes'" x-cloak>
+      <section class="section">
+        <h1 class="title">Nodes</h1>
+        <h2 class="subtitle">Join the Constellation!</h2>
+
+        <div class="column is-4-tablet is-3-desktop">
+          <div class="card">
+            <div class="card-content">
+              <p class="title">
+                Node Name
+              </p>
+              <p class="subtitle">
+                Tags: Yours, Mine, Ours
+              </p>
+            </div>
+            <footer class="card-footer">
+              <div class="card-footer-item has-text-primary-dark">UP</div>
+              <div class="card-footer-item">00:00</div>
+              <div class="card-footer-item"> 0.00 SOL</div>
+            </footer>
+          </div>
+        </div>
+
+        <div class="buttons is-right">
+        <button class="button is-primary is-rounded is-medium"><span class="icon is-large"><i class="las la-plus la-2x"></i></span></button>
+        </div>
+
+      </section>
+    </div>
+
+    </div>
+  </body>
+</html>
