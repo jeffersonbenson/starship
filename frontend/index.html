@@ -27,8 +27,8 @@
           this.shortpubKey = pubKey.substring(0,7) + '...'
           const lowerpubKey = pubKey.toLowerCase();
           console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
-          this.pods = await getPods(lowerpubKey);
-          console.log(this.pods);
+          pods = await getPods(lowerpubKey);
+          console.log(pods);
       }catch (err) {
           this.shortpubKey = 'Error!'
           console.log("Something has gone wrong!")
@@ -36,10 +36,8 @@
       }
     }
     async function getPods(lowerpubKey) {
-        let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey)
-        .then(response => response.json())
-        .then(data => pods = data)
-        .catch(err => console.log('Request Failed', err));
+        let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey);
+        let pods = await response.json();
         return pods;
     }
     </script>
