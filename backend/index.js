@@ -1,4 +1,3 @@
-const { body, check, validationResult } = require('express-validator');
 const express = require('express');
 const k8s = require('@kubernetes/client-node');
 
@@ -8,14 +7,6 @@ const PORT = 8080;
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-app.use(
-  function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header("Content-Type", "application/json")
-    next();
-  });
 
 app.get(
   '/getpods/:pubkey',
