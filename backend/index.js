@@ -11,6 +11,7 @@ const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 app.get(
   '/getpods/:pubkey',
   (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
   k8sApi.listNamespacedPod(`${req.params.pubkey}`)
     .then((response) => {
       podObject = [];

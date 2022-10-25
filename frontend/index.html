@@ -99,14 +99,14 @@
 
       <div class="container">
     
-        <div class="columns mt-5 is-8 is-variable" x-data="{pods: this.pods}">
+        <div class="columns mt-5 is-8 is-variable" x-data="{ pods : this.pods }">
 
-          <template x-for="pod in pods" :key="id">
+          <template x-for="pod in this.pods" :key="pod">
           <div class="column is-4-tablet is-3-desktop">
             <div class="card">
               <div class="card-content">
-                <p class="title has-text-primary-dark" x-text="name"></p>
-                <p class="subtitle" x-text="image"></p>
+                <p class="title has-text-primary-dark" x-text="pod.name"></p>
+                <p class="subtitle" x-text="pod.image"></p>
                 <p>
                   <a href="" target="_blank" rel="noopener noreferrer">mytest</a>
                 </p>
