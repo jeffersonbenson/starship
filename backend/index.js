@@ -12,7 +12,7 @@ app.get(
   '/getpods/:pubkey',
   (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
-  k8sApi.listNamespacedPod(`${req.params.pubkey}`)
+    k8sApi.listNamespacedPod(`${req.params.pubkey}`)
     .then((response) => {
       podObject = [];
       id = 1;
@@ -27,6 +27,31 @@ app.get(
       }
       res.json(podObject);
     });
+  }
+);
+
+app.post(
+  'deploy',
+  (req, res) => {
+    res.send('Deploying pods...')
+    const yamlString = k8s.dumpYaml({
+      metadata: {
+        name: `${req.params.pubkey}`,
+        time: `${req.params.time}`
+      },
+      spec: {
+        valuesContent: {
+          image: `${req.params.image}`
+        }
+      }
+    });
+  }
+);
+
+app.get(
+  'nodes',
+  (req, res) => {
+
   }
 );
 
