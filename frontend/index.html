@@ -20,7 +20,6 @@
     <script>
     // Solana code goes here
     const endpoint = solanaWeb3.clusterApiUrl('devnet');
-    let lowerpubKey = '';
     let pods = {};
     async function connectWallet(){
       try {
@@ -29,25 +28,20 @@
           this.shortpubKey = pubKey.substring(0,7) + '...'
           lowerpubKey = pubKey.toLowerCase();
           console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
-          //pods = await getPods(lowerpubKey);
-          //console.log(pods);
+          let getPodsEvent = new CustomEvent('getpods');
+          window.dispatchEvent(getPodsEvent);
       }catch (err) {
           this.shortpubKey = 'Error!'
           console.log("Something has gone wrong!")
           console.log(err)
       }
     }
-    async function getPods() {
-      if ( lowerpubKey == '' ) {
-        console.log('No lowerpubKey found!')
-        window.setTimeout(getPods, 1000);
-      }
-      else {
+    async function getPods(lowerpubKey) {
         let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey);
-        let pods = await response.json();
-        console.log(pods);
-        return pods;
-      }
+        let newPods = await response.json();
+        this.pods = newPods;
+        console.log(this.pods);
+        return this.pods;
     }
     </script>
 
@@ -97,7 +91,7 @@
         </div>
       </div>
       <div class="navbar-end">
-        <a x-data="{ shortpubKey: ''}" x-text="shortpubKey ? shortpubKey : 'Connect'" @click="connectWallet" class="button mr-3 mt-1 is-rounded is-light is-responsive"></a>
+        <button x-data="{ shortpubKey: ''}" x-text="shortpubKey ? shortpubKey : 'Connect'" @click="connectWallet" class="button mr-3 mt-1 is-rounded is-light is-responsive"></button>
       </div>
     </nav>
 
@@ -108,7 +102,7 @@
 
       <div class="container">
     
-        <div class="columns mt-5 is-8 is-variable" x-data="{ getPods }">
+        <div class="columns mt-5 is-8 is-variable" @getpods.window="await getPods(lowerpubKey)" x-data="pods">
 
           <template x-for="pod in pods" :key="pod.id">
           <div class="column is-4-tablet is-3-desktop">

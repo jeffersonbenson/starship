@@ -25,7 +25,8 @@ app.get(
           id++
           podObject.push(pod)
       }
-      res.json(podObject);
+      podSender = {pods: podObject}
+      res.json(podSender);
     });
   }
 );
