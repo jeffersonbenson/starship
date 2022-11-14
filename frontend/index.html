@@ -20,7 +20,7 @@
     <script>
     // Solana code goes here
     const endpoint = solanaWeb3.clusterApiUrl('devnet');
-    let pods = {};
+    //let pods = {};
     async function connectWallet(){
       try {
           const resp = await window.solana.connect();
@@ -38,10 +38,9 @@
     }
     async function getPods(lowerpubKey) {
         let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey);
-        let newPods = await response.json();
-        this.pods = newPods;
-        console.log(this.pods);
-        return this.pods;
+        let data = await response.json();
+        console.log(data);
+        return data;
     }
     </script>
 
@@ -102,7 +101,7 @@
 
       <div class="container">
     
-        <div class="columns mt-5 is-8 is-variable" @getpods.window="await getPods(lowerpubKey)" x-data="pods">
+        <div class="columns mt-5 is-8 is-variable" @getpods.window="pods.push(...await getPods(lowerpubKey))" x-data="{ pods: [] }">
 
           <template x-for="pod in pods" :key="pod.id">
           <div class="column is-4-tablet is-3-desktop">
@@ -111,10 +110,10 @@
                 <p class="title has-text-primary-dark" x-text="pod.name"></p>
                 <p class="subtitle" x-text="pod.image"></p>
                 <p>
-                  <a href="" target="_blank" rel="noopener noreferrer">mytest</a>
+                  <a href="" target="_blank" rel="noopener noreferrer">mytest.local</a>
                 </p>
                 <p>
-                  Time Remaining:
+                  Time Remaining: TODO
                 </p>
               </div>
               <footer class="card-footer">

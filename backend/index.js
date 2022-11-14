@@ -25,8 +25,18 @@ app.get(
           id++
           podObject.push(pod)
       }
-      podSender = {pods: podObject}
-      res.json(podSender);
+      //podSender = {pods: podObject}
+      res.json(podObject);
+    });
+  }
+);
+
+app.get(
+  '/getlogs/:pubkey/:pod',
+  (req, res) => {
+    k8sApi.readNamespacedPodLog(`${req.params.pod}`, `${req.params.pubkey}`)
+    .then((response) => {
+      console.log(response.body)
     });
   }
 );
