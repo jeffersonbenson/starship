@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <meta property="og:title" content="Project Starship">
+
     <title>Project Starship</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"> -->
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
 
     <style>
@@ -19,28 +23,80 @@
 
     <script>
     // Solana code goes here
-    const endpoint = solanaWeb3.clusterApiUrl('devnet');
-    //let pods = {};
+    //const endpoint = solanaWeb3.clusterApiUrl('devnet');
     async function connectWallet(){
       try {
-          const resp = await window.solana.connect();
-          pubKey = resp.publicKey.toString();
-          this.shortpubKey = pubKey.substring(0,7) + '...'
-          lowerpubKey = pubKey.toLowerCase();
-          console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
-          let getPodsEvent = new CustomEvent('getpods');
-          window.dispatchEvent(getPodsEvent);
+        const resp = await window.solana.connect();
+        pubKey = resp.publicKey.toString();
+        this.shortpubKey = pubKey.substring(0,7) + '...'
+        lowerpubKey = pubKey.toLowerCase();
+        console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
+        let getPodsEvent = new CustomEvent('getpods');
+        window.dispatchEvent(getPodsEvent);
+        let getNodesEvent = new CustomEvent('getnodes');
+        window.dispatchEvent(getNodesEvent);
       }catch (err) {
-          this.shortpubKey = 'Error!'
-          console.log("Something has gone wrong!")
-          console.log(err)
+        this.shortpubKey = 'Error!'
+        console.log("Something has gone wrong!")
+        console.log(err)
       }
     }
     async function getPods(lowerpubKey) {
-        let response = await fetch('http://localhost:8080/getpods/' + lowerpubKey);
-        let data = await response.json();
-        console.log(data);
-        return data;
+      let response = await fetch('http://localhost:8080/pods/' + lowerpubKey);
+      let pods = await response.json();
+      //console.log(pods);
+      return pods;
+    }
+    async function getNodes(lowerpubKey) {
+      let response = await fetch('http://localhost:8080/nodes/' + lowerpubKey);
+      let nodes = await response.json();
+      //console.log(nodes);
+      return nodes;
+    }
+    function deployForm() {
+      return {
+        form: {
+          name: '',
+          link: '',
+          sku: '',
+          time: '',
+          networking: '',
+          terms: ''
+        },
+      async submitData() {
+        await sendTransaction();
+        this.form.pubKey = lowerpubKey;
+        fetch('http://localhost:8080/deploy', {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(this.form),
+        })
+        .then((response) => {
+          console.log('Success!');
+          })
+      }
+      }
+    }
+    async function sendTransaction() {
+      console.log('Sending transaction...')
+      try {
+        const keypair = await solanaWeb3.Keypair;
+        let transaction = new solanaWeb3.Transaction();
+        let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"));
+
+        transaction.add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: keypair.publicKey,
+            toPubkey: keypair.publicKey,
+            lamports: solanaWeb3.LAMPORTS_PER_SOL,
+          }),
+        );
+        solanaWeb3.sendAndConfirmTransaction(connection, transaction, [keypair]);
+      } catch (error) {
+        console.log(error)
+      }
     }
     </script>
 
@@ -51,6 +107,7 @@
 
 
     <div x-data="{ tab: 'dashboard' }">
+    <div @getpods.window="pods.push(...await getPods(lowerpubKey))" @getnodes.window="nodes.push(...await getNodes(lowerpubKey))" @keydown.escape="showLogs = false" x-data="{ pods: [], nodes: [], 'showLogs': false }">
     <nav class="navbar is-dark has-shadow" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <span class="icon is-large">
@@ -80,9 +137,6 @@
               Docs
             </a>
             <a class="navbar-item">
-              About
-            </a>
-            <a class="navbar-item">
               Community
             </a>
           </div>
@@ -101,24 +155,35 @@
 
       <div class="container">
     
-        <div class="columns mt-5 is-8 is-variable" @getpods.window="pods.push(...await getPods(lowerpubKey))" x-data="{ pods: [] }">
+        <div class="columns mt-5 is-8 is-variable">
 
           <template x-for="pod in pods" :key="pod.id">
           <div class="column is-4-tablet is-3-desktop">
             <div class="card">
               <div class="card-content">
-                <p class="title has-text-primary-dark" x-text="pod.name"></p>
+                <p :class="pod.status" class="title" x-text="pod.name"></p>
                 <p class="subtitle" x-text="pod.image"></p>
                 <p>
-                  <a href="" target="_blank" rel="noopener noreferrer">mytest.local</a>
+                  <a :href="'https://' + pod.address" target="_blank" rel="noopener noreferrer" x-text="pod.address"></a>
                 </p>
                 <p>
                   Time Remaining: TODO
                 </p>
               </div>
               <footer class="card-footer">
-                <a class="card-footer-item" href="">Logs</a>
-                <a class="card-footer-item" href="">Add Time</a>
+                <a class="card-footer-item" @click="showLogs = true">Logs</a>
+                
+                <div class="modal is-active" x-show="showLogs">
+                  <div class="modal-background" x-show="showLogs"></div>
+                  <div class="modal-content" x-show="showLogs" @keydown.escape.window="showLogs = false" @click.away="showLogs = false">
+                    <div class="box">
+                      <div class="has-title-centered"><code x-text="pod.logs"></code></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <a class="card-footer-item">Stop</a>
+                <a class="card-footer-item">Add Time</a>
               </footer>
             </div>
           </div>
@@ -139,23 +204,62 @@
         <div class="columns mt-5 is-variable">
 
           <div class="column is-half">
+          <form action="/" method="POST" @submit.prevent="submitData" x-data="deployForm()">
 
             <div class="field">
               <label class="label">Name</label>
-              <input class="input" type="text" placeholder="my-fancy-container">
+              <input class="input" type="text" x-model="form.name" placeholder="my-fancy-container">
             </div>
 
             <div class="field">
-              <label class="label">IPFS Link</label>
-              <input class="input" type="text" placeholder="secret-ipfs-link">
+              <label class="label">IPFS or Docker Link</label>
+              <input class="input" type="text" x-model="form.link" placeholder="secret-ipfs-link">
+            </div>
+
+            <div class="field">
+              <label class="label">SKU</label>
+
+              <label class="radio">
+                <input type="radio" name="sku" @click="form.sku = 'arm'">
+                ARM (Cheaper, but less powerful)
+              </label>
+               
+              <label class="radio">
+                <input type="radio" name="sku" @click="form.sku = 'x86'">
+                X86 (More powerful, more expensive)
+              </label> 
             </div>
 
             <div class="field">
               <label class="label">Time in hours</label>
-              <input class="input" type="text" placeholder="42">
+              <input class="input" type="text" x-model="form.time" placeholder="42">
+            </div>
+
+            <div class="field">
+              <label class="label">Networking</label>
+
+              <label class="radio">
+                <input type="radio" name="networking" @click="form.networking = 'pip'">
+                Public IP
+              </label>
+
+              <label class="radio">
+                <input type="radio" name="networking" @click="form.networking = 'tor'">
+                TOR Networking Adapter
+              </label>
+              
+            </div>
+
+            <div class="field">
+              <label class="label">Terms & Conditions</label>
+              <label class="checkbox">
+                <input type="checkbox" name="terms" @click="form.terms = 'true'">
+                I agree to the <a href="">Don't Be Evil</a> policy.
+              </label>
             </div>
 
             <button class="button is-primary is-rounded">Submit</button>
+            </form>
 
           </div>
 
@@ -171,31 +275,37 @@
         <h1 class="title">Nodes</h1>
         <h2 class="subtitle">Join the Constellation!</h2>
 
+        <template x-for="node in nodes" :key="node.id">
         <div class="column is-4-tablet is-3-desktop">
           <div class="card">
             <div class="card-content">
-              <p class="title">
-                Node Name
-              </p>
-              <p class="subtitle">
-                Tags: Yours, Mine, Ours
-              </p>
+              <p class="title" x-text="node.name"></p>
+              <p class="subtitle" x-text="node.uid"></p>
             </div>
             <footer class="card-footer">
               <div class="card-footer-item has-text-primary-dark">UP</div>
-              <div class="card-footer-item">00:00</div>
+              <div class="card-footer-item" x-text="node.time"></div>
               <div class="card-footer-item"> 0.00 SOL</div>
             </footer>
           </div>
         </div>
+        </template>
 
-        <div class="buttons is-right">
-        <button class="button is-primary is-rounded is-medium"><span class="icon is-large"><i class="las la-plus la-2x"></i></span></button>
+        <div class="buttons is-right" x-data="{ 'showInstructions' : false }" @keydown.escape.window="showInstructions = false">
+        <button class="button is-primary is-rounded is-medium"><span class="icon is-large"><i class="las la-plus la-2x" @click="showInstructions = true"></i></span></button>
+        <div class="modal is-active" x-show="showInstructions">
+          <div class="modal-background" x-show="showInstructions"></div>
+          <div class="modal-content" x-show="showInstructions" @click.away="showInstructions = false">
+            <div class="box">
+              <div class="has-title-centered">TestModal</div>
+            </div>
+          </div>
+        </div>
         </div>
 
       </section>
     </div>
-
+    </div>
     </div>
   </body>
 </html>
