@@ -1,58 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta property="og:title" content="Project Starship">
-
     <title>Project Starship</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
-
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"> -->
-    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-
     <style>
-    [x-cloak] { display: none !important; }
+      [x-cloak] {
+        display: none !important;
+      }
     </style>
 
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-
+    <script type="module" src="./main.js"></script>
     <script>
-    // Solana code goes here
-    //const endpoint = solanaWeb3.clusterApiUrl('devnet');
-    async function connectWallet(){
+    async function connectWallet() {
       try {
         const resp = await window.solana.connect();
         pubKey = resp.publicKey.toString();
         this.shortpubKey = pubKey.substring(0,7) + '...'
         lowerpubKey = pubKey.toLowerCase();
+        console.log(lowerpubKey)
         console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
+
         let getPodsEvent = new CustomEvent('getpods');
         window.dispatchEvent(getPodsEvent);
         let getNodesEvent = new CustomEvent('getnodes');
         window.dispatchEvent(getNodesEvent);
-      }catch (err) {
+        }
+      catch (err) {
         this.shortpubKey = 'Error!'
         console.log("Something has gone wrong!")
         console.log(err)
-      }
+        }
     }
+
     async function getPods(lowerpubKey) {
-      let response = await fetch('http://localhost:8080/pods/' + lowerpubKey);
-      let pods = await response.json();
-      //console.log(pods);
-      return pods;
+    let response = await fetch('http://localhost:8080/pods/' + lowerpubKey);
+    let pods = await response.json();
+    //console.log(pods);
+    return pods;
     }
+
     async function getNodes(lowerpubKey) {
-      let response = await fetch('http://localhost:8080/nodes/' + lowerpubKey);
-      let nodes = await response.json();
-      //console.log(nodes);
-      return nodes;
+    let response = await fetch('http://localhost:8080/nodes/' + lowerpubKey);
+    let nodes = await response.json();
+    //console.log(nodes);
+    return nodes;
     }
+
     function deployForm() {
       return {
         form: {
@@ -63,249 +59,212 @@
           networking: '',
           terms: ''
         },
-      async submitData() {
-        await sendTransaction();
-        this.form.pubKey = lowerpubKey;
-        fetch('http://localhost:8080/deploy', {
+      async submitData() { 
+          this.form.pubKey = window.lowerpubKey;
+          window.makePayment(pubKey, this.form);
+          fetch('http://localhost:8080/deploy', {
           method: 'POST',
           headers: {
-            "Content-Type": "application/json"
+              "Content-Type": "application/json"
           },
           body: JSON.stringify(this.form),
-        })
-        .then((response) => {
+          })
+          .then((response) => {
           console.log('Success!');
           })
-      }
+        }
       }
     }
-    async function sendTransaction() {
-      console.log('Sending transaction...')
-      try {
-        const keypair = await solanaWeb3.Keypair;
-        let transaction = new solanaWeb3.Transaction();
-        let connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"));
 
-        transaction.add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: keypair.publicKey,
-            toPubkey: keypair.publicKey,
-            lamports: solanaWeb3.LAMPORTS_PER_SOL,
-          }),
-        );
-        solanaWeb3.sendAndConfirmTransaction(connection, transaction, [keypair]);
-      } catch (error) {
-        console.log(error)
-      }
+    async function getBalanceUsingWeb3(address) {
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));
+        return connection.getBalance(address);
     }
     </script>
-
   </head>
-
   <body>
-  <noscript>You need to enable JavaScript to use this dapp.</noscript>
-
+    <noscript>You need to enable JavaScript to use this dapp.</noscript>
 
     <div x-data="{ tab: 'dashboard' }">
-    <div @getpods.window="pods.push(...await getPods(lowerpubKey))" @getnodes.window="nodes.push(...await getNodes(lowerpubKey))" @keydown.escape="showLogs = false" x-data="{ pods: [], nodes: [], 'showLogs': false }">
-    <nav class="navbar is-dark has-shadow" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <span class="icon is-large">
-          <i class="las la-space-shuttle la-2x"></i>
-        </span>
-        <h1 class="is-size-3">Starship</h1>
-      </div>
-      <div class="navbar-start">
-        <a @click="tab = 'dashboard'" class="navbar-item" href="#">
-          Dashboard
-        </a>
-        <a @click="tab = 'deploy'" class="navbar-item" href="#">
-          Deploy
-        </a>
-        <a @click="tab = 'nodes'" class="navbar-item">
-          Nodes
-        </a>
-        <a class="navbar-item">
-          Status
-        </a>
-
-        <div class="navbar-item has-dropdown is-hoverable">
-
-          <a class="navbar-link">More</a>
-          <div class="navbar-dropdown">
-            <a class="navbar-item">
-              Docs
-            </a>
-            <a class="navbar-item">
-              Community
-            </a>
-          </div>
-
-        </div>
-      </div>
-      <div class="navbar-end">
-        <button x-data="{ shortpubKey: ''}" x-text="shortpubKey ? shortpubKey : 'Connect'" @click="connectWallet" class="button mr-3 mt-1 is-rounded is-light is-responsive"></button>
-      </div>
-    </nav>
-
-    <div x-show="tab === 'dashboard'" x-cloak>
-    <section class="section">
-      <h1 class="title">Dashboard</h1>
-      <h2 class="subtitle">Track your things in space</h2>
-
-      <div class="container">
-    
-        <div class="columns mt-5 is-8 is-variable">
-
-          <template x-for="pod in pods" :key="pod.id">
-          <div class="column is-4-tablet is-3-desktop">
-            <div class="card">
-              <div class="card-content">
-                <p :class="pod.status" class="title" x-text="pod.name"></p>
-                <p class="subtitle" x-text="pod.image"></p>
+      <div @getpods.window="pods.push(...await getPods(lowerpubKey))" 
+      @getnodes.window="nodes.push(...await getNodes(lowerpubKey))" 
+      @keydown.escape="showLogs = false" 
+      x-data="{ pods: [], nodes: [], 'showLogs': false }">
+        <nav style="margin-bottom: -50px;" role="navigation" aria-label="main navigation">
+          <ul>
+            <li><i class="las la-space-shuttle la-2x" style="margin-left: 10px;"></i>
+            </li>
+            <li>Starship</li>
+            <li>
+              <a @click="tab = 'dashboard'" href="#">Dashboard</a>
+            </li>
+            <li>
+              <a @click="tab = 'deploy'" href="#">Deploy</a>
+            </li>
+            <li>
+              <a @click="tab = 'nodes'">Nodes</a>
+            </li>
+            <li>
+              <a href="#">Status</a>
+            </li>
+  
+            <li>
+              <details role="list">
+                <summary aria-haspopup="listbox" role="link">More</summary>
+                <ul role="listbox">
+                  <li><a href="#">Docs</a></li>
+                  <li><a href="#">Community</a></li>
+                </ul>
+              </details>
+            </li>
+          </ul>
+  
+          <ul>
+            <button x-data="{ shortpubKey: ''}" x-text="shortpubKey ? shortpubKey : 'Connect'" @click.once="connectWallet"
+              class="outline contrast" style="margin-right: 15px; margin-top: 10px;"></button>
+          </ul>
+        </nav>
+  
+        <div x-show="tab === 'dashboard'" x-cloak>
+          <article data-theme="light">
+            <hgroup>
+              <h1>Dashboard</h1>
+              <h2>Track your things in space</h2>
+            </hgroup>
+  
+            <template x-for="pod in pods" :key="pod.id">
+              <article style="max-width: fit-content;">
+                <header>
+                  <hgroup>
+                    <h5>
+                      <p :class="pod.status" x-text="pod.name"></p>
+                    </h5>
+                    <h6>
+                      <p x-text="pod.image"></p>
+                    </h6>
+                  </hgroup>
+                </header>
                 <p>
                   <a :href="'https://' + pod.address" target="_blank" rel="noopener noreferrer" x-text="pod.address"></a>
                 </p>
                 <p>
                   Time Remaining: TODO
                 </p>
-              </div>
-              <footer class="card-footer">
-                <a class="card-footer-item" @click="showLogs = true">Logs</a>
-                
-                <div class="modal is-active" x-show="showLogs">
-                  <div class="modal-background" x-show="showLogs"></div>
-                  <div class="modal-content" x-show="showLogs" @keydown.escape.window="showLogs = false" @click.away="showLogs = false">
-                    <div class="box">
-                      <div class="has-title-centered"><code x-text="pod.logs"></code></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <a class="card-footer-item">Stop</a>
-                <a class="card-footer-item">Add Time</a>
-              </footer>
-            </div>
-          </div>
-          </template>
-
+                <footer>
+                  <a href="#" role="button" @click="showLogs = true">Logs</a>
+  
+                  <dialog open x-show="showLogs">
+                    <article style="max-width: fit-content;">
+                      <header x-text="pod.name"></header>
+                      <div x-show="showLogs" @keydown.escape.window="showLogs = false" @click.away="showLogs = false">
+                        <p><code x-text="pod.logs"></code></p>
+                      </div>
+                    </article>
+                  </dialog>
+  
+                  <a href="#" role="button" @click.once="stopPod(pod.name)">Stop</a>
+                  <a href="#" role="button" @click.once="addTime(pod.uid)">Add Time</a>
+                </footer>
+              </article>
+  
+            </template>
+  
         </div>
-        
-      </div>
-    </section>
-    </div>
-
-    <div x-show="tab === 'deploy'" x-cloak>
-    <section class="section">
-      <h1 class="title">Deploy</h1>
-      <h2 class="subtitle">Launch your thing into space!</h2>
-
-      <div class="container">
-        <div class="columns mt-5 is-variable">
-
-          <div class="column is-half">
-          <form action="/" method="POST" @submit.prevent="submitData" x-data="deployForm()">
-
-            <div class="field">
-              <label class="label">Name</label>
-              <input class="input" type="text" x-model="form.name" placeholder="my-fancy-container">
-            </div>
-
-            <div class="field">
-              <label class="label">IPFS or Docker Link</label>
-              <input class="input" type="text" x-model="form.link" placeholder="secret-ipfs-link">
-            </div>
-
-            <div class="field">
-              <label class="label">SKU</label>
-
-              <label class="radio">
-                <input type="radio" name="sku" @click="form.sku = 'arm'">
+        </article>
+  
+      <div x-show="tab === 'deploy'" x-cloak>
+        <article data-theme="light">
+          <hgroup>
+            <h1>Deploy</h1>
+            <h2>Launch your thing into space!</h2>
+          </hgroup>
+          
+          <form style="max-width: fit-content;" action="/" method="POST" @submit.prevent="submitData" x-data="deployForm()">
+  
+            <label for="name">Name (50 Characters Max)</label>
+            <input id="name" type="text" x-model.lazy="form.name" placeholder="my-fancy-container" required>
+  
+            <label for="link">IPFS or Docker Link</label>
+            <input id="link" type="text" x-model.lazy="form.link" placeholder="secret-ipfs-link" required>
+  
+            <label for="time">Time in hours</label>
+            <input id="time" type="number" x-model.lazy="form.time" placeholder="42" required>
+  
+            <fieldset>
+              <legend>SKU</legend>
+              <label for="arm">
+                <input id="arm" type="radio" name="sku" @click="form.sku = 'arm'">
                 ARM (Cheaper, but less powerful)
               </label>
-               
-              <label class="radio">
-                <input type="radio" name="sku" @click="form.sku = 'x86'">
+  
+              <label for="x86">
+                <input id="x86" type="radio" name="sku" @click="form.sku = 'x86'">
                 X86 (More powerful, more expensive)
-              </label> 
-            </div>
-
-            <div class="field">
-              <label class="label">Time in hours</label>
-              <input class="input" type="text" x-model="form.time" placeholder="42">
-            </div>
-
-            <div class="field">
-              <label class="label">Networking</label>
-
-              <label class="radio">
-                <input type="radio" name="networking" @click="form.networking = 'pip'">
+              </label>
+            </fieldset>
+  
+            <fieldset>
+              <legend>Networking</legend>
+              <label for="pip">
+                <input id="pip" type="radio" name="networking" @click="form.networking = 'pip'">
                 Public IP
               </label>
-
-              <label class="radio">
-                <input type="radio" name="networking" @click="form.networking = 'tor'">
+  
+              <label for="tor">
+                <input id="tor" type="radio" name="networking" @click="form.networking = 'tor'">
                 TOR Networking Adapter
               </label>
-              
-            </div>
-
-            <div class="field">
-              <label class="label">Terms & Conditions</label>
-              <label class="checkbox">
-                <input type="checkbox" name="terms" @click="form.terms = 'true'">
-                I agree to the <a href="">Don't Be Evil</a> policy.
-              </label>
-            </div>
-
-            <button class="button is-primary is-rounded">Submit</button>
-            </form>
-
-          </div>
-
-        </div>
-
+            </fieldset>
+  
+            <fieldset>
+              <label for="terms">Terms & Conditions</label>
+              <input id="terms" type="checkbox" name="terms" @click="form.terms = 'true'" required>
+              I agree to the <a href="#">Don't Be Evil</a> policy.
+            </fieldset>
+  
+            <button type="submit">Submit</button>
+          </form>
+  
+        </article>
       </div>
-
-    </section>
+  
+      <div x-show="tab === 'nodes'" x-cloak>
+        <article data-theme="light">
+          <hgroup>
+            <h1>Nodes</h1>
+            <h2>Join the Constellation!</h2>
+          </hgroup>
+  
+          <template x-for="node in nodes" :key="node.id">
+            <article style="max-width: fit-content;">
+              <header>
+                <hgroup>
+                  <h5><p x-text="node.name"></p></h5>
+                  <h6><p x-text="node.uid"></p></h6>
+                </hgroup>
+              </header>
+              <div>UP</div>
+              <div x-text="node.time"></div>
+              <div> 0.00 SOL</div>
+            </article>
+          </template>
+  
+          <div style="text-align: right;" x-data="{ 'showInstructions' : false }"
+            @keydown.escape.window="showInstructions = false">
+            <a href="#" role="button"><i class="las la-plus la-2x" @click="showInstructions = true"></i></a>
+  
+            <dialog open x-show="showInstructions">
+              <article style="max-width: fit-content;">
+                <header>Join The Constellation!</header>
+                <div x-show="showInstructions" @click.away="showInstructions = false">
+                  <p style="text-align: left;">TestModal</p>
+                </div>
+              </article>
+            </dialog>
+  
+        </article>
+      </div>
     </div>
-
-    <div x-show="tab === 'nodes'" x-cloak>
-      <section class="section">
-        <h1 class="title">Nodes</h1>
-        <h2 class="subtitle">Join the Constellation!</h2>
-
-        <template x-for="node in nodes" :key="node.id">
-        <div class="column is-4-tablet is-3-desktop">
-          <div class="card">
-            <div class="card-content">
-              <p class="title" x-text="node.name"></p>
-              <p class="subtitle" x-text="node.uid"></p>
-            </div>
-            <footer class="card-footer">
-              <div class="card-footer-item has-text-primary-dark">UP</div>
-              <div class="card-footer-item" x-text="node.time"></div>
-              <div class="card-footer-item"> 0.00 SOL</div>
-            </footer>
-          </div>
-        </div>
-        </template>
-
-        <div class="buttons is-right" x-data="{ 'showInstructions' : false }" @keydown.escape.window="showInstructions = false">
-        <button class="button is-primary is-rounded is-medium"><span class="icon is-large"><i class="las la-plus la-2x" @click="showInstructions = true"></i></span></button>
-        <div class="modal is-active" x-show="showInstructions">
-          <div class="modal-background" x-show="showInstructions"></div>
-          <div class="modal-content" x-show="showInstructions" @click.away="showInstructions = false">
-            <div class="box">
-              <div class="has-title-centered">TestModal</div>
-            </div>
-          </div>
-        </div>
-        </div>
-
-      </section>
-    </div>
-    </div>
-    </div>
+  </div>
   </body>
-</html>
+  </html>
