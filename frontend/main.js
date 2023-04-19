@@ -1,16 +1,18 @@
-import '@picocss/pico'
-import './assets/line-awesome.min.css'
+import "@picocss/pico";
+import "./assets/line-awesome.min.css";
 
-import * as web3 from '@solana/web3.js';
-import { Buffer } from 'buffer';
+import * as web3 from "@solana/web3.js";
+import { Buffer } from "buffer";
 window.global = window;
 global.Buffer = global.Buffer || Buffer;
 
-
 window.makePayment = async (pubkey, form) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(import.meta.env.CLUSTER_API_URL), { confirmTransactionInitialTimeout: 5000 });
+  const connection = new web3.Connection(
+    web3.clusterApiUrl(import.meta.env.CLUSTER_API_URL),
+    { confirmTransactionInitialTimeout: 5000 }
+  );
 
-  console.log('connection established!');
+  console.log("connection established!");
 
   let transferAmount = 1 * web3.LAMPORTS_PER_SOL;
 
@@ -21,24 +23,33 @@ window.makePayment = async (pubkey, form) => {
       fromPubkey: window.solana.publicKey,
       toPubkey: escrow_wallet,
       lamports: transferAmount,
-    }),
+    })
   );
   // Setting the variables for the transaction
   ix.feePayer = await window.solana.publicKey;
   let blockhashObj = await connection.getLatestBlockhash();
   ix.recentBlockhash = await blockhashObj.blockhash;
 
-  console.log('sending transaction...');
+  console.log("sending transaction...");
   let signed = await window.solana.signTransaction(ix);
   let signature = await connection.sendRawTransaction(signed.serialize());
   // const confirmation = await connection.confirmTransaction(blockhashObj.blockhash,blockhashObj.lastValidBlockHeight,signature);
   const confirmation = await connection.confirmTransaction(signature);
   console.log("Signature: ", signature);
+  alert("Payment successful!");
 };
 
-window.stopPod = async (name) => {
-  console.log("stopping pod");
-  console.log(name);
+window.stopPod = async (name, lowerpubKey) => {
+  console.log("stopping pod" + name);
+  fetch("http://localhost:8080/deletePod", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name: name, namespace: lowerpubKey }),
+  }).then((response) => {
+    alert("Pod Deleted! Reload app to see changes");
+  });
 };
 
 window.addTime = async (uid) => {
@@ -46,8 +57,8 @@ window.addTime = async (uid) => {
   console.log(uid);
 };
 
-import Alpine from 'alpinejs'
- 
-window.Alpine = Alpine
- 
-Alpine.start()
+import Alpine from "alpinejs";
+
+window.Alpine = Alpine;
+
+Alpine.start();

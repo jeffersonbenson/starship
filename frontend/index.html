@@ -20,7 +20,7 @@
         pubKey = resp.publicKey.toString();
         this.shortpubKey = pubKey.substring(0,7) + '...'
         lowerpubKey = pubKey.toLowerCase();
-        console.log(lowerpubKey)
+        // console.log(lowerpubKey)
         console.log("Connected to the server? "+window.solana.isConnected+" and your public key is "+pubKey);
 
         let getPodsEvent = new CustomEvent('getpods');
@@ -74,12 +74,7 @@
           })
         }
       }
-    }
-
-    async function getBalanceUsingWeb3(address) {
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));
-        return connection.getBalance(address);
-    }
+    };
     </script>
   </head>
   <body>
@@ -162,7 +157,7 @@
                     </article>
                   </dialog>
   
-                  <a href="#" role="button" @click.once="stopPod(pod.name)">Stop</a>
+                  <a href="#" role="button" @click.once="stopPod(pod.name, lowerpubKey)">Stop</a>
                   <a href="#" role="button" @click.once="addTime(pod.uid)">Add Time</a>
                 </footer>
               </article>
@@ -193,12 +188,12 @@
             <fieldset>
               <legend>SKU</legend>
               <label for="arm">
-                <input id="arm" type="radio" name="sku" @click="form.sku = 'arm'">
+                <input id="arm" type="radio" name="sku" @click="form.sku = 'arm'" required>
                 ARM (Cheaper, but less powerful)
               </label>
   
               <label for="x86">
-                <input id="x86" type="radio" name="sku" @click="form.sku = 'x86'">
+                <input id="x86" type="radio" name="sku" @click="form.sku = 'x86'" required>
                 X86 (More powerful, more expensive)
               </label>
             </fieldset>
@@ -206,12 +201,12 @@
             <fieldset>
               <legend>Networking</legend>
               <label for="pip">
-                <input id="pip" type="radio" name="networking" @click="form.networking = 'pip'">
+                <input id="pip" type="radio" name="networking" @click="form.networking = 'pip'" required>
                 Public IP
               </label>
   
               <label for="tor">
-                <input id="tor" type="radio" name="networking" @click="form.networking = 'tor'">
+                <input id="tor" type="radio" name="networking" @click="form.networking = 'tor'" required>
                 TOR Networking Adapter
               </label>
             </fieldset>
