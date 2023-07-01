@@ -45,7 +45,7 @@
     async function getNodes(lowerpubKey) {
     let response = await fetch('http://localhost:8080/nodes/' + lowerpubKey);
     let nodes = await response.json();
-    //console.log(nodes);
+    // console.log(nodes);
     return nodes;
     }
 
@@ -143,7 +143,7 @@
                   <a :href="'https://' + pod.address" target="_blank" rel="noopener noreferrer" x-text="pod.address"></a>
                 </p>
                 <p>
-                  Time Remaining: TODO
+                  Time Remaining: <strong x-text="pod.time"></strong>
                 </p>
                 <footer>
                   <a href="#" role="button" @click="showLogs = true">Logs</a>
@@ -158,7 +158,7 @@
                   </dialog>
   
                   <a href="#" role="button" @click.once="stopPod(pod.name, lowerpubKey)">Stop</a>
-                  <a href="#" role="button" @click.once="addTime(pod.uid)">Add Time</a>
+                  <a href="#" role="button" @click.once="addTime(pod.name, lowerpubKey)">Add Time</a>
                 </footer>
               </article>
   
@@ -193,8 +193,8 @@
               </label>
   
               <label for="x86">
-                <input id="x86" type="radio" name="sku" @click="form.sku = 'x86'" required>
-                X86 (More powerful, more expensive)
+                <input id="x86" type="radio" name="sku" @click="form.sku = 'amd64'" required>
+                AMD64 (More powerful, more expensive)
               </label>
             </fieldset>
   

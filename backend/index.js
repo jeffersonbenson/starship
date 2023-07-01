@@ -28,10 +28,18 @@ app.get("/pods/:pubkey", async (req, res) => {
       } else {
         podStatus = "has-text-danger-dark";
       }
-      // console.log(item);
+
+      // console.log(item.status.phase);
       pod["id"] = id;
       pod["status"] = podStatus;
+      pod["state"] = item.status.phase;
       pod["name"] = item.metadata.name;
+      pod["time"] =
+        (
+          (new Date(item.metadata.annotations.expireTime).getTime() -
+            new Date().getTime()) /
+          (1000 * 60 * 60)
+        ).toFixed(2) + " hours";
       pod["uid"] = item.metadata.uid;
       pod["image"] = item.spec.containers[0].image;
       pod["address"] = item.status.podIP;
@@ -39,7 +47,11 @@ app.get("/pods/:pubkey", async (req, res) => {
       id++;
       podObject.push(pod);
     }
-    res.json(podObject);
+    // console.log(podObject);
+    const runningPods = podObject.filter(
+      (podObject) => podObject.state !== "Succeeded"
+    );
+    res.json(runningPods);
   });
 });
 
@@ -71,25 +83,37 @@ app.post("/deploy", (req, res) => {
   // console.log(req.body);
   res.json(req.body);
 
+  k8sApi.readNamespace(req.body.pubKey).catch((res) => {
+    console.log("Namespace not found. Creating namespace...");
+    const createNamespace = {
+      metadata: {
+        name: req.body.pubKey,
+      },
+    };
+    k8sApi.createNamespace(createNamespace);
+  });
+
+  var expireTime = new Date();
+  expireTime.setHours(expireTime.getHours() + parseInt(req.body.time));
+
+  deploymentName = req.body.name + "-" + req.body.pubKey;
+
   const deployment = {
     apiVersion: "helm.cattle.io/v1",
     kind: "HelmChart",
     metadata: {
-      name: req.body.name + "-" + req.body.pubKey,
-      // namespace: req.body.pubKey,
-      namespace: "default",
-      sku: req.body.sku,
+      name: deploymentName.substring(0, 40),
+      namespace: "staging",
     },
     spec: {
-      repo: "https://charts.bitnami.com/bitnami",
-      chart: "apache",
-      // chart: ((req.body.sku === 'arm') ? 'arm' : 'x86'),
-      // targetNamespace: 'default',
+      chart: "https://%{KUBERNETES_API}%/static/deployment_chart.tgz",
       targetNamespace: req.body.pubKey,
       set: {
+        deploymentName: deploymentName.substring(0, 40),
+        expireTime: expireTime,
         image: req.body.link,
         networking: req.body.networking,
-        arch: req.body.sku,
+        sku: req.body.sku,
       },
     },
   };
@@ -98,24 +122,60 @@ app.post("/deploy", (req, res) => {
     .createNamespacedCustomObject(
       "helm.cattle.io",
       "v1",
-      "default",
+      "staging",
       "helmcharts",
       deployment
     )
     .then((response) => {
-      console.log(response.body);
+      // console.log(deployment);
+      console.log("Pod deployed!");
     })
     .catch((err) => {
       console.error(err);
     });
-  // console.log(deployment);
 });
 
 app.post("/deletePod", (req, res) => {
   res.json(req.body);
-  // console.log(req.body);
-  k8sApi.deleteNamespacedPod(req.body.name, req.body.namespace);
-  // console.log('pod deleted!');
+
+  chart = "";
+
+  k8sApi
+    .readNamespacedPod(req.body.name, req.body.namespace)
+    .then((response) => {
+      // console.log(response.body.metadata.labels.name);
+      chart = response.body.metadata.labels.name;
+    });
+  k8sHelmClient.deleteNamespacedCustomObject(
+    "helm.cattle.io",
+    "v1",
+    "staging",
+    "helmcharts",
+    chart
+  );
+  console.log("pod deleted!");
+});
+
+app.post("/addTime", (req, res) => {
+  res.json(req.body)
+
+  k8sApi.listNamespacedPod(`${req.body.namespace}`)
+    .then((res) => {
+      newTime = new Date(response.body.items[0].metadata.annotations.expireTime + `${req.body.hours}`)
+        const patch = [
+            {
+                "op": "replace",
+                "path":"/metadata/annotations",
+                "value": {
+                    "expireTime": newTime
+                }
+            }
+        ];
+        const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
+        k8sApi.patchNamespacedPod(res.body.items[0].metadata.name, `${req.body.namespace}`, patch, undefined, undefined, undefined, undefined, undefined, options)
+            .then(() => { console.log("Patched.")})
+            .catch((err) => { console.log("Error: "); console.log(err)});
+    });
 });
 
 app.get("/nodes/:pubkey", (req, res) => {

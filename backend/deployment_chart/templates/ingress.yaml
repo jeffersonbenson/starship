@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Values.deploymentName }}-ingress"
+  annotations:
+    expireTime: {{ .Values.expireTime }}
+spec:
+  rules:
+  - host: "my.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: "{{ .Values.deploymentName }}-service"
+            port: 
+              name: http

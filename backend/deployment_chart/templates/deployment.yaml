@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deploymentName }}
+  annotations:
+    expireTime: {{ .Values.expireTime }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ .Values.deploymentName }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.deploymentName }}
+      annotations:
+        expireTime: {{ .Values.expireTime }}
+    spec:
+      securityContext:
+        # runAsNonRoot: true
+        # runAsUser: 1000
+      containers:
+        - name: {{ .Values.deploymentName }}
+          securityContext:
+          #   capabilities:
+          #     drop:
+          #     - ALL
+            allowPrivilegeEscalation: false
+            # readOnlyRootFilesystem: true
+          image: "{{ .Values.image }}"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      nodeSelector:
+        kubernetes.io/arch: {{ .Values.sku }}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.deploymentName }}-service"
+  annotations:
+    expireTime: {{ .Values.expireTime }}
+spec:
+  selector:
+    app: {{ .Values.deploymentName }}
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+

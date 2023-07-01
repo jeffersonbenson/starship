@@ -1,0 +1,9 @@
+deploymentName: "mydeployment"
+
+expireTime: "soon"
+
+image: "nginx"
+
+networking: "public"
+
+sku: "amd64"

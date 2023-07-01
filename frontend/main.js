@@ -6,7 +6,7 @@ import { Buffer } from "buffer";
 window.global = window;
 global.Buffer = global.Buffer || Buffer;
 
-window.makePayment = async (pubkey, form) => {
+window.makePayment = async (pubkey, hours) => {
   const connection = new web3.Connection(
     web3.clusterApiUrl(import.meta.env.CLUSTER_API_URL),
     { confirmTransactionInitialTimeout: 5000 }
@@ -14,7 +14,7 @@ window.makePayment = async (pubkey, form) => {
 
   console.log("connection established!");
 
-  let transferAmount = 1 * web3.LAMPORTS_PER_SOL;
+  let transferAmount = hours * 1 * web3.LAMPORTS_PER_SOL;
 
   const escrow_wallet = new web3.PublicKey(import.meta.env.VITE_ESCROW_WALLET);
 
@@ -40,21 +40,41 @@ window.makePayment = async (pubkey, form) => {
 };
 
 window.stopPod = async (name, lowerpubKey) => {
-  console.log("stopping pod" + name);
-  fetch("http://localhost:8080/deletePod", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ name: name, namespace: lowerpubKey }),
-  }).then((response) => {
-    alert("Pod Deleted! Reload app to see changes");
-  });
+  if (confirm("Data loss may occur. Confirm?")) {
+    console.log("stopping pod" + name);
+    fetch("http://localhost:8080/deletePod", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: name, namespace: lowerpubKey }),
+    }).then((response) => {
+      alert("Pod Deleted! Reload the app to see the changes");
+    });
+  }
 };
 
-window.addTime = async (uid) => {
+window.addTime = async (name, lowerpubKey) => {
   console.log("adding time");
-  console.log(uid);
+  hours = prompt("Hours to add:");
+  if (hours == null || hours == "") {
+    alert("Add cancelled!");
+  } else {
+    window.makePayment(pubkey, hours)
+    fetch("http://localhost:8080/addTime", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        body: JSON.stringify({
+          name: name,
+          namespace: lowerpubKey,
+          hours: hours,
+        }),
+      },
+    }).then((response) => {
+      alert("Time added! Reload the app to see the changes");
+    });
+  }
 };
 
 import Alpine from "alpinejs";
