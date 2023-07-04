@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: back-office
+spec:
+  schedule: "*/5 */1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: internal-kubectl
+          containers:
+          - name: back-office
+            image: <todo>
+            imagePullPolicy: Always
+            volumeMounts:
+              - mountPath: "/home/wallet.json"
+                name: wallet.json
+                readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+            - name: wallet.json
+              secret:
+                secretName: escrow-wallet
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wallet.json
+data:
+  wallet.json: 
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: internal-kubectl
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modify-pods
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: modify-pods-to-sa
+subjects:
+  - kind: ServiceAccount
+    name: internal-kubectl
+roleRef:
+  kind: Role
+  name: modify-pods
+  apiGroup: rbac.authorization.k8s.io
