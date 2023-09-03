@@ -1,0 +1,12 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+    name: "my-test2"
+    namespace: "staging"
+spec:
+    chart: "https://%{KUBERNETES_API}%/static/deployment_chart.tgz"
+    targetNamespace: "default"
+    set:
+        deploymentName: "deploymentname"
+        image: "nginx"
+        # image: "nginxinc/nginx-unprivileged"

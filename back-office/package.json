@@ -1,0 +1,15 @@
+{
+  "name": "starship-back-office",
+  "version": "1.0.0",
+  "description": "Handler for payments for nodes in the Starship cluster",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@kubernetes/client-node": "^0.18.1",
+    "@solana/web3.js": "^1.78.4"
+  }
+}
